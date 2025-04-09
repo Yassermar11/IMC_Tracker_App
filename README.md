@@ -73,9 +73,21 @@ If you see the following message, type "no":
 "You have an existing firebase.json file and possibly already configured your project for Firebase.
 Would you prefer to reuse the values in your existing firebase.json file to configure your project? · no"
 
-7) Run the project
+7) Configuration de l'index
+In the Firebase Console, open your project and then Firestore Database.
+Click Index > Add Index (or "Ajouter un index")
+
+  - ID de collection : bmiResults
+  
+  - Chemin d'accès du champ : userId   -->  Ascending
+  - Chemin d'accès du champ : timestamp   -->  Descending
+  - Chemin d'accès du champ : __name__   -->  Descending (You may click on "Ajouter un champ")
+
+  - Champs d'application des requetes --> Collection
+
+8) Run the project
 Start the project with the command:
-flutter run -d edge
+flutter run -d edge (It's recommended to run the project on the edge, to avoid the problems with the android)
 If you encounter any issues, feel free to contact me.
 
 📌 @made_by_yasser
