@@ -1,119 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 class BMIHistoryScreen extends StatelessWidget {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<List<QueryDocumentSnapshot>> _fetchBMIResults() async {
-    User? user = _auth.currentUser;
-    if (user == null) {
-      print("User is not logged in");
-      return [];
-    }
-
-    try {
-      final snapshot = await _firestore
-          .collection('bmiResults')
-          .where('userId', isEqualTo: user.uid)
-          .orderBy('timestamp', descending: true)
-          .get();
-
-      if (snapshot.docs.isEmpty) {
-        print("No BMI results found for user: ${user.uid}");
-        return [];
-      }
-
-      print("Fetched ${snapshot.docs.length} BMI results");
-      return snapshot.docs;
-    } catch (e) {
-      print("Error fetching BMI results: $e");
-      return [];
-    }
+  Color _getCardColor(double bmi) {
+    if (bmi < 18.5) return Colors.lightBlue[100]!;
+    if (bmi < 24.9) return Colors.green[100]!;
+    if (bmi < 29.9) return Colors.yellow[100]!;
+    if (bmi < 34.9) return Colors.orange[100]!;
+    if (bmi < 39.9) return Colors.purple[100]!;
+    return Colors.red[100]!;
   }
 
-  Future<void> _deleteResult(String documentId) async {
-    try {
-      await _firestore.collection('bmiResults').doc(documentId).delete();
-      print("Deleted document: $documentId");
-    } catch (e) {
-      print("Error deleting document: $e");
-    }
+  Color _getTextColor(double bmi) {
+    return Colors.black87;
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('History'),
+          backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Please sign in to view history'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => context.go('/login'),
+                child: const Text('Sign In'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("BMI History"),
+        title: const Text('BMI History', style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.go('/'),
+          ),
+        ],
       ),
-      body: FutureBuilder<List<QueryDocumentSnapshot>>(
-        future: _fetchBMIResults(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('bmiResults')
+            .where('userId', isEqualTo: user.uid)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            print("FutureBuilder error: ${snapshot.error}");
-            return Center(child: Text("Error loading data"));
+            return const Center(child: Text('Error loading data'));
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No BMI results found"));
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.history, size: 50, color: Colors.grey),
+                  const SizedBox(height: 20),
+                  const Text('No BMI records found'),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text('Calculate BMI'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
-
-          var bmiResults = snapshot.data!;
 
           return ListView.builder(
-            itemCount: bmiResults.length,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var doc = bmiResults[index];
-              var data = doc.data() as Map<String, dynamic>;
+              final doc = snapshot.data!.docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              final timestamp = (data['timestamp'] as Timestamp).toDate();
+              final bmi = (data['bmi'] as num).toDouble();
+              final result = data['result'] as String;
+              final weight = data['weight']?.toStringAsFixed(1) ?? 'N/A';
+              final height = data['height']?.toStringAsFixed(1) ?? 'N/A';
 
-              return Dismissible(
-                key: Key(doc.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: EdgeInsets.only(right: 20),
-                  child: Icon(Icons.delete, color: Colors.white),
-                ),
-                confirmDismiss: (direction) async {
-                  return await showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Confirm Delete"),
-                        content: Text("Are you sure you want to delete this BMI record?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text("Cancel"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text("Delete", style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                onDismissed: (direction) {
-                  _deleteResult(doc.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("BMI record deleted")));
-                },
-                child: ListTile(
-                  title: Text("BMI: ${data['bmi'].toStringAsFixed(2)}"),
-                  subtitle: Text("Result: ${data['result']}"),
-                  trailing: Text(
-                    "${data['timestamp'].toDate().toString().substring(0, 16)}",
-                    style: TextStyle(fontSize: 12),
+              return Card(
+                elevation: 2,
+                color: _getCardColor(bmi),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Padding(
+                  padding: const
+                  //EdgeInsets.all(12),
+                  EdgeInsets.only(top: 1, bottom: 1, left: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                    Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'BMI: ${bmi.toStringAsFixed(1)}',
+                        style: TextStyle(
+                          color: _getTextColor(bmi),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _showDeleteDialog(context, doc.id),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Weight: $weight kg | Height: $height cm',
+                    style: TextStyle(
+                      color: _getTextColor(bmi),
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Category: ${result.split('(')[0].trim()}',
+                    style: TextStyle(
+                      color: _getTextColor(bmi),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    DateFormat('MMM dd, yyyy - hh:mm a').format(timestamp),
+                    style: TextStyle(
+                      color: _getTextColor(bmi),
+                    ),
+                  ),
+                    ],
+
                   ),
                 ),
               );
@@ -122,5 +171,38 @@ class BMIHistoryScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _showDeleteDialog(BuildContext context, String docId) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Record'),
+          content: const Text('Are you sure you want to delete this BMI record?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                _deleteRecord(docId);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteRecord(String docId) async {
+    try {
+      await FirebaseFirestore.instance.collection('bmiResults').doc(docId).delete();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
   }
 }

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'RegisterScreen.dart';
 import 'bmi_history.dart';
 import 'home.dart';
 import 'firebase_options.dart';
+import 'LoginScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,13 +15,11 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    FirebaseUIAuth.configureProviders([EmailAuthProvider()]);
     runApp(MyApp());
   } catch (err) {
     print("Firebase initialization failed: $err");
   }
 }
-
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
@@ -30,27 +30,12 @@ class MyApp extends StatelessWidget {
         builder: (context, state) => Home(),
       ),
       GoRoute(
-        path: '/sign-in',
-        builder: (context, state) => SignInScreen(
-          actions: [
-            ForgotPasswordAction((context, email) {
-              context.push('/forgot-password', extra: email);
-            }),
-            AuthStateChangeAction((context, state) {
-              if (state is SignedIn || state is UserCreated) {
-                context.pushReplacement('/');
-              }
-            }),
-          ],
-        ),
+        path: '/login',
+        builder: (context, state) => LoginScreen(),
       ),
-      // New route for forgot password
       GoRoute(
-        path: '/forgot-password',
-        builder: (context, state) {
-          final email = state.extra as String?;
-          return ForgotPasswordScreen(email: email);
-        },
+        path: '/register',
+        builder: (context, state) => RegisterPage(),
       ),
       GoRoute(
         path: '/history',
