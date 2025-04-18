@@ -148,7 +148,6 @@ class _HomeState extends State<Home> {
       _showGauge = true; // Show gauge only after calculation
     });
   }
-
   Widget _buildBMIGauge() {
     final l10n = AppLocalizations.of(context)!;
 
@@ -159,57 +158,82 @@ class _HomeState extends State<Home> {
       child: SfRadialGauge(
         axes: <RadialAxis>[
           RadialAxis(
-            minimum: 10,
-            maximum: 50,
+            minimum: 12,
+            maximum: 48,
+            showLabels: true,
+            showTicks: true,
+            axisLineStyle: AxisLineStyle(
+                thickness: 0.13,
+                thicknessUnit: GaugeSizeUnit.factor),
             ranges: <GaugeRange>[
               GaugeRange(
-                startValue: 0.0,
+                startValue: 10,
                 endValue: 18.5,
                 color: Colors.blue,
                 label: l10n.bmiUnderweight,
-                labelStyle: GaugeTextStyle(fontSize: 12), // Taille de police fixe
+                labelStyle: GaugeTextStyle(
+                    fontSize: 13,
+                ),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
               GaugeRange(
                 startValue: 18.5,
                 endValue: 24.9,
                 color: Colors.green,
                 label: l10n.bmiNormal,
-                labelStyle: GaugeTextStyle(fontSize: 12),
+                labelStyle: GaugeTextStyle(fontSize: 13),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
               GaugeRange(
                 startValue: 25.0,
                 endValue: 29.9,
                 color: Colors.yellow,
                 label: l10n.bmiOverweight,
-                labelStyle: GaugeTextStyle(fontSize: 12),
+                labelStyle: GaugeTextStyle(fontSize: 13),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
               GaugeRange(
                 startValue: 30.0,
                 endValue: 34.9,
                 color: Colors.orange,
                 label: l10n.bmiObesity1,
-                labelStyle: GaugeTextStyle(fontSize: 12),
+                labelStyle: GaugeTextStyle(fontSize: 13),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
               GaugeRange(
                 startValue: 35.0,
                 endValue: 39.9,
                 color: Colors.purple,
                 label: l10n.bmiObesity2,
-                labelStyle: GaugeTextStyle(fontSize: 12),
+                labelStyle: GaugeTextStyle(fontSize: 13),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
               GaugeRange(
                 startValue: 40.0,
                 endValue: 50.0,
                 color: Colors.red,
                 label: l10n.bmiObesity3,
-                labelStyle: GaugeTextStyle(fontSize: 12),
+                labelStyle: GaugeTextStyle(fontSize: 13),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.2,
+                endWidth: 0.2,
               ),
             ],
             pointers: <GaugePointer>[
               NeedlePointer(
                 value: _bmi,
                 enableAnimation: true,
-                needleLength: 0.6, // Valeur fixe entre 0 et 1
+                needleLength: 0.6,
               ),
             ],
             annotations: <GaugeAnnotation>[
@@ -217,7 +241,7 @@ class _HomeState extends State<Home> {
                 widget: Text(
                   _bmi.toStringAsFixed(1),
                   style: TextStyle(
-                    fontSize: 24, // Taille de police fixe
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -230,6 +254,18 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+  Widget _buildLegend(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 12, height: 12, color: color),
+        SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -251,6 +287,7 @@ class _HomeState extends State<Home> {
 
         actions: [
           PopupMenuButton<Locale>(
+            tooltip: l10n.changelanguage,
             icon: const Icon(Icons.language),
             onSelected: (Locale locale) {
               final notifier = Provider.of<LocaleNotifier>(context, listen: false);

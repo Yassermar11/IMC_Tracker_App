@@ -91,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
         centerTitle: true,
         actions: [
           PopupMenuButton<Locale>(
+            tooltip: l10n.changelanguage,
             icon: Icon(Icons.language, color: Colors.white),
             onSelected: (Locale locale) {
               localeNotifier.setLocale(locale);

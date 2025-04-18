@@ -140,6 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
         actions: [
           PopupMenuButton<Locale>(
+            tooltip: l10n.changelanguage,
             icon: Icon(Icons.language, color: Colors.white),
             onSelected: (Locale locale) {
               localeNotifier.setLocale(locale);
@@ -213,7 +214,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 30),
               SizedBox(
-                width: 150,
+                width: 160,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () => _signOut(context),
@@ -222,6 +223,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    minimumSize: Size(100, 50),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   child: Text(
                     l10n.logOut,

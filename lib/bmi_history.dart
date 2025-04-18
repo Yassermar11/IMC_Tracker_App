@@ -31,30 +31,33 @@ class BMIHistoryScreen extends StatelessWidget {
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(l10n.historyTitle),
-          backgroundColor: Colors.green,
-          iconTheme: const IconThemeData(color: Colors.white),
           actions: [
-            PopupMenuButton<Locale>(
-              icon: const Icon(Icons.language),
-              onSelected: (Locale locale) {
-                localeNotifier.setLocale(locale);
-              },
-              itemBuilder: (BuildContext context) {
-                return [
-                  const PopupMenuItem(
-                    value: Locale('en'),
-                    child: Text('English'),
+            Consumer<LocaleNotifier>(
+              builder: (context, localeNotifier, child) {
+                final l10n = AppLocalizations.of(context)!;
+                return Tooltip(
+                  message: l10n.changelanguage,  // Your custom tooltip
+                  child: PopupMenuButton<Locale>(
+                    // Disable default tooltip completely
+                    tooltip: '',  // <- Critical to override default
+                    icon: const Icon(Icons.language, color: Colors.white),
+                    onSelected: (locale) => localeNotifier.setLocale(locale),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: Locale('en'),
+                        child: Text("English"),
+                      ),
+                      PopupMenuItem(
+                        value: Locale('fr'),
+                        child: Text("Français"),
+                      ),
+                      PopupMenuItem(
+                        value: Locale('ar'),
+                        child: Text("العربية"),
+                      ),
+                    ],
                   ),
-                  const PopupMenuItem(
-                    value: Locale('fr'),
-                    child: Text('Français'),
-                  ),
-                  const PopupMenuItem(
-                    value: Locale('ar'),
-                    child: Text('العربية'),
-                  ),
-                ];
+                );
               },
             ),
           ],
@@ -137,7 +140,7 @@ class BMIHistoryScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () => context.go('/'),
-                    child: Text(l10n.calculateBmi),
+                    child: Text(l10n.calculateBmi, style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                     ),

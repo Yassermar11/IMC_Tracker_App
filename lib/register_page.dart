@@ -103,6 +103,7 @@ class _RegisterPageState extends State<RegisterPage> {
           Directionality(
             textDirection: TextDirection.ltr,
             child: PopupMenuButton<Locale>(
+              tooltip: l10n.changelanguage,
               icon: Icon(Icons.language, color: Colors.white),
               onSelected: (Locale locale) {
                 localeNotifier.setLocale(locale);
