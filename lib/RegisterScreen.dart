@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'locale_notifier.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -21,9 +24,10 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _showConfirmPassword = false;
 
   Future<void> _register() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _error = 'Passwords do not match');
+      setState(() => _error = l10n.passwordsDoNotMatch);
       return;
     }
 
@@ -51,36 +55,86 @@ class _RegisterPageState extends State<RegisterPage> {
       await credential.user?.updateDisplayName(_usernameController.text.trim());
       if (mounted) context.go('/');
     } catch (e) {
-      setState(() => _error = _getErrorMessage(e));
+      setState(() => _error = _getErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String _getErrorMessage(dynamic e) {
+  String _getErrorMessage(BuildContext context, dynamic e) {
+    final l10n = AppLocalizations.of(context)!;
     if (e is FirebaseAuthException) {
       switch (e.code) {
-        case 'email-already-in-use': return 'Email already in use';
-        case 'invalid-email': return 'Invalid email address';
-        case 'weak-password': return 'Password is too weak';
-        default: return 'Registration failed: ${e.message}';
+        case 'email-already-in-use': return l10n.emailInUseError;
+        case 'invalid-email': return l10n.invalidEmailError;
+        case 'weak-password': return l10n.weakPasswordError;
+        default: return '${l10n.registrationFailed}: ${e.message}';
       }
     }
-    return 'Registration failed. Please try again';
+    return l10n.registrationFailedGeneric;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeNotifier = Provider.of<LocaleNotifier>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register', style: TextStyle(
+        title: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Text(l10n.registerTitle, style: TextStyle( // Changed from loginTitle to registerTitle
             color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.bold,
-        )),
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+          )),
+        ),
         backgroundColor: Colors.green,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        leading: Directionality(
+          textDirection: TextDirection.ltr,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        actions: [
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: PopupMenuButton<Locale>(
+              icon: Icon(Icons.language, color: Colors.white),
+              onSelected: (Locale locale) {
+                localeNotifier.setLocale(locale);
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    value: Locale('en'),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text('English'),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: Locale('fr'),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text('Français'),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: Locale('ar'),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text('العربية'),
+                    ),
+                  ),
+                ];
+              },
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
@@ -88,25 +142,25 @@ class _RegisterPageState extends State<RegisterPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Image.asset('images/e.png', height: 320), // Add your logo
+              Image.asset('images/e.png', height: 320),
               SizedBox(height: 20),
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: l10n.usernameLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   prefixIcon: Icon(Icons.person),
                 ),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Enter username' : null,
+                value == null || value.isEmpty ? l10n.enterUsername : null,
               ),
               SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: l10n.emailLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -114,13 +168,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 validator: (value) =>
                 value == null || !value.contains('@')
-                    ? 'Enter valid email' : null,
+                    ? l10n.enterValidEmail : null,
               ),
               SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: l10n.passwordLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -132,13 +186,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 obscureText: !_showPassword,
                 validator: (value) => value != null && value.length < 6
-                    ? 'Password must be at least 6 characters' : null,
+                    ? l10n.passwordLengthError : null,
               ),
               SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
-                  labelText: 'Confirm Password',
+                  labelText: l10n.confirmPasswordLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -150,8 +204,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 obscureText: !_showConfirmPassword,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please confirm password';
-                  if (value != _passwordController.text) return 'Passwords do not match';
+                  if (value == null || value.isEmpty) return l10n.confirmPasswordError;
+                  if (value != _passwordController.text) return l10n.passwordsDoNotMatch;
                   return null;
                 },
               ),
@@ -172,10 +226,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)
-                      : Text('REGISTER', style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      : Text(l10n.registerButton, style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   )),
                 ),
               ),
@@ -183,14 +237,13 @@ class _RegisterPageState extends State<RegisterPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Already have an account?", style: TextStyle(
+                  Text(l10n.haveAccountQuestion, style: TextStyle(
                     fontSize: 19,
-                  ),
-                  ),
+                  )),
                   TextButton(
                     onPressed: () => context.go('/login'),
-                    child: Text('Login', style: TextStyle(
-                        color: Colors.green,
+                    child: Text(l10n.loginButton, style: TextStyle(
+                      color: Colors.green,
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
                     )),

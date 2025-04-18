@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'locale_notifier.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -17,8 +20,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPassword = false;
 
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-      setState(() => _errorMessage = 'Enter a valid email to reset password');
+      setState(() => _errorMessage = l10n.enterValidEmailToReset);
       return;
     }
 
@@ -28,12 +32,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Password reset link sent to ${_emailController.text}'),
+          content: Text('${l10n.passwordResetLinkSent} ${_emailController.text}'),
           backgroundColor: Colors.green,
         ),
       );
     } on FirebaseAuthException catch (e) {
-      setState(() => _errorMessage = _getErrorMessage(e.code));
+      setState(() => _errorMessage = _getErrorMessage(context, e.code));
     }
   }
 
@@ -53,48 +57,75 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) context.go('/');
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = _getErrorMessage(e.code);
+        _errorMessage = _getErrorMessage(context, e.code);
       });
     } finally {
       if (mounted) setState(() => _isSigningIn = false);
     }
   }
 
-  String _getErrorMessage(String code) {
+  String _getErrorMessage(BuildContext context, String code) {
+    final l10n = AppLocalizations.of(context)!;
     switch (code) {
-      case 'invalid-email': return 'Please enter a valid email address';
-      case 'user-disabled': return 'This account has been disabled';
-      case 'user-not-found': return 'No account found. Please register';
-      case 'wrong-password': return 'Invalid email or password';
-      default: return 'Login failed. Please try again';
+      case 'invalid-email': return l10n.invalidEmailError;
+      case 'user-disabled': return l10n.userDisabledError;
+      case 'user-not-found': return l10n.userNotFoundError;
+      case 'wrong-password': return l10n.wrongPasswordError;
+      default: return l10n.loginFailedError;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeNotifier = Provider.of<LocaleNotifier>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login', style: TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-            fontWeight: FontWeight.bold,
+        title: Text(l10n.loginTitle, style: TextStyle(
+          color: Colors.white,
+          fontSize: 25,
+          fontWeight: FontWeight.bold,
         )),
         backgroundColor: Colors.green,
         centerTitle: true,
+        actions: [
+          PopupMenuButton<Locale>(
+            icon: Icon(Icons.language, color: Colors.white),
+            onSelected: (Locale locale) {
+              localeNotifier.setLocale(locale);
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: Locale('en'),
+                  child: Text('English'),
+                ),
+                const PopupMenuItem(
+                  value: Locale('fr'),
+                  child: Text('Français'),
+                ),
+                const PopupMenuItem(
+                  value: Locale('ar'),
+                  child: Text('العربية'),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: Column(
-
             children: [
-              Image.asset('images/e.png', height: 320), // Add your logo
+              Image.asset('images/e.png', height: 320),
               SizedBox(height: 30),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: l10n.emailLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -102,8 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  if (!value.contains('@')) return 'Please enter a valid email';
+                  if (value == null || value.isEmpty) return l10n.enterYourEmail;
+                  if (!value.contains('@')) return l10n.enterValidEmail;
                   return null;
                 },
               ),
@@ -111,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: l10n.passwordLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -123,8 +154,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 obscureText: !_showPassword,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your password';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty) return l10n.enterYourPassword;
+                  if (value.length < 6) return l10n.passwordLengthError;
                   return null;
                 },
               ),
@@ -145,8 +176,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: _isSigningIn
                       ? CircularProgressIndicator(color: Colors.white)
-                      : Text('SIGN IN', style: TextStyle(
-                      fontSize: 19,
+                      : Text(l10n.signInButton, style: TextStyle(
+                    fontSize: 19,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   )),
@@ -157,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextButton(
                   onPressed: _resetPassword,
                   child: Text(
-                    'Forgot Password?',
+                    l10n.forgotPassword,
                     style: TextStyle(color: Colors.green),
                   ),
                 ),
@@ -166,16 +197,15 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account?", style: TextStyle(
+                  Text(l10n.noAccountQuestion, style: TextStyle(
                     fontSize: 19,
-                  ),
-                  ),
+                  )),
                   TextButton(
                     onPressed: () => context.push('/register'),
-                    child: Text('Register', style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
+                    child: Text(l10n.registerButton, style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
                     )),
                   ),
                 ],

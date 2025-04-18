@@ -3,8 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:imc_secured/profile_page.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'bmi_calculator.dart';
+import 'locale_notifier.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -90,9 +93,11 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _saveBMI() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_bmi <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please calculate BMI first!')),
+        SnackBar(content: Text(l10n.calculateFirstWarning)),
       );
       return;
     }
@@ -103,18 +108,18 @@ class _HomeState extends State<Home> {
         await _firestore.collection('bmiResults').add({
           'userId': user.uid,
           'bmi': _bmi,
-          'result': _info,
+          'resultKey': BMICalculator.getBMIResultKey(_bmi),
           'timestamp': DateTime.now(),
           'weight': double.tryParse(controlWeight.text),
           'height': double.tryParse(controlHeight.text),
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('BMI saved successfully!')),
+          SnackBar(content: Text(l10n.saveSuccess)),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save BMI: $e')),
+        SnackBar(content: Text('${l10n.saveFailure}: $e')),
       );
     }
   }
@@ -135,7 +140,7 @@ class _HomeState extends State<Home> {
     double weight = double.parse(controlWeight.text);
     double height = double.parse(controlHeight.text) / 100;
     double imc = BMICalculator.calculateBMI(weight, height);
-    String result = BMICalculator.getBMIResult(imc);
+    String result = BMICalculator.getBMIResult(context, imc);
 
     setState(() {
       _info = result;
@@ -145,8 +150,11 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildBMIGauge() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
-      height: 250,
+      height: 320,
+      width: 370,
       margin: EdgeInsets.symmetric(vertical: 20),
       child: SfRadialGauge(
         axes: <RadialAxis>[
@@ -154,24 +162,64 @@ class _HomeState extends State<Home> {
             minimum: 10,
             maximum: 50,
             ranges: <GaugeRange>[
-              GaugeRange(startValue: 0.0, endValue: 18.5, color: Colors.blue, label: 'Underweight'),
-              GaugeRange(startValue: 18.5, endValue: 24.9, color: Colors.green, label: 'Normal'),
-              GaugeRange(startValue: 25.0, endValue: 29.9, color: Colors.yellow, label: 'Overweight'),
-              GaugeRange(startValue: 30.0, endValue: 34.9, color: Colors.orange, label: 'Obesity I'),
-              GaugeRange(startValue: 35.0, endValue: 39.9, color: Colors.purple, label: 'Obesity II'),
-              GaugeRange(startValue: 40.0, endValue: 50.0, color: Colors.red, label: 'Obesity III'),
+              GaugeRange(
+                startValue: 0.0,
+                endValue: 18.5,
+                color: Colors.blue,
+                label: l10n.bmiUnderweight,
+                labelStyle: GaugeTextStyle(fontSize: 12), // Taille de police fixe
+              ),
+              GaugeRange(
+                startValue: 18.5,
+                endValue: 24.9,
+                color: Colors.green,
+                label: l10n.bmiNormal,
+                labelStyle: GaugeTextStyle(fontSize: 12),
+              ),
+              GaugeRange(
+                startValue: 25.0,
+                endValue: 29.9,
+                color: Colors.yellow,
+                label: l10n.bmiOverweight,
+                labelStyle: GaugeTextStyle(fontSize: 12),
+              ),
+              GaugeRange(
+                startValue: 30.0,
+                endValue: 34.9,
+                color: Colors.orange,
+                label: l10n.bmiObesity1,
+                labelStyle: GaugeTextStyle(fontSize: 12),
+              ),
+              GaugeRange(
+                startValue: 35.0,
+                endValue: 39.9,
+                color: Colors.purple,
+                label: l10n.bmiObesity2,
+                labelStyle: GaugeTextStyle(fontSize: 12),
+              ),
+              GaugeRange(
+                startValue: 40.0,
+                endValue: 50.0,
+                color: Colors.red,
+                label: l10n.bmiObesity3,
+                labelStyle: GaugeTextStyle(fontSize: 12),
+              ),
             ],
             pointers: <GaugePointer>[
               NeedlePointer(
                 value: _bmi,
                 enableAnimation: true,
+                needleLength: 0.6, // Valeur fixe entre 0 et 1
               ),
             ],
             annotations: <GaugeAnnotation>[
               GaugeAnnotation(
                 widget: Text(
                   _bmi.toStringAsFixed(1),
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24, // Taille de police fixe
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 positionFactor: 0.8,
                 angle: 90,
@@ -182,9 +230,9 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_auth.currentUser == null) {
       return Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -193,7 +241,7 @@ class _HomeState extends State<Home> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("BMI CALCULATOR", style: TextStyle(
+        title: Text(l10n.bmiCalculatorTitle, style: TextStyle(
             fontFamily: "Segoe UI",
             color:Colors.white,
             fontWeight: FontWeight.bold)),
@@ -202,22 +250,45 @@ class _HomeState extends State<Home> {
         iconTheme: IconThemeData(color: Colors.white),
 
         actions: [
+          PopupMenuButton<Locale>(
+            icon: const Icon(Icons.language),
+            onSelected: (Locale locale) {
+              final notifier = Provider.of<LocaleNotifier>(context, listen: false);
+              notifier.setLocale(locale);
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: Locale('en'),
+                  child: Text('English'),
+                ),
+                const PopupMenuItem(
+                  value: Locale('fr'),
+                  child: Text('Français'),
+                ),
+                const PopupMenuItem(
+                  value: Locale('ar'),
+                  child: Text('العربية'),
+                ),
+              ];
+            },
+          ),
           Tooltip(
-            message: "View History",
+            message: l10n.viewHistoryTooltip,
             child: IconButton(
               icon: Icon(Icons.history),
               onPressed: () => context.push('/history'),
             ),
           ),
           Tooltip(
-            message: "Reset",
+            message: l10n.resetTooltip,
             child: IconButton(
               icon: Icon(Icons.refresh),
               onPressed: _resetFields,
             ),
           ),
           Tooltip(
-            message: "Profile",
+            message: l10n.profileTooltip,
             child: IconButton(
               icon: CircleAvatar(
                 backgroundColor: Colors.blue[50],
@@ -239,7 +310,7 @@ class _HomeState extends State<Home> {
               Padding(
                 padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
                 child: Text(
-                  'Welcome back, ${FirebaseAuth.instance.currentUser?.displayName ?? 'User'}',
+                  '${l10n.welcomeBack}, ${FirebaseAuth.instance.currentUser?.displayName ?? l10n.user}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 25,
@@ -249,19 +320,20 @@ class _HomeState extends State<Home> {
                 ),
               ),
               Icon(Icons.person, size: 120.0, color: Colors.green),
-              _buildInputField(controlWeight, "Weight (Kg)"),
-              _buildInputField(controlHeight, "Height (cm)"),
-              _buildActionButton("Calculate", Colors.green, _calculate, "Calculate BMI"),
-              _buildActionButton("Save Result", Colors.blue, _saveBMI, "Save BMI Result"),
-              if (_info.isNotEmpty) Text(
-                _info,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: getBMIColor(_bmi),
-                  fontSize: 25.0,
-                  fontFamily: "Segoe UI",
-                ),
-              ),
+              _buildInputField(controlWeight, l10n.weightLabel),
+              _buildInputField(controlHeight, l10n.heightLabel),
+              _buildActionButton(l10n.calculateButton, Colors.green, _calculate, l10n.calculateTooltip),
+              _buildActionButton(l10n.saveButton, Colors.blue, _saveBMI, l10n.saveTooltip),
+          if (_info.isNotEmpty) Text(
+            _info,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: getBMIColor(_bmi),
+              fontSize: 25.0,
+              fontFamily: "Segoe UI",
+              fontWeight: FontWeight.bold,
+            ),
+          ),
               if (_showGauge) _buildBMIGauge(),
             ],
           ),
@@ -271,6 +343,7 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildInputField(TextEditingController controller, String label) {
+    final l10n = AppLocalizations.of(context)!;
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.numberWithOptions(decimal: true),
@@ -280,10 +353,9 @@ class _HomeState extends State<Home> {
       ),
       textAlign: TextAlign.center,
       style: TextStyle(color: Colors.green, fontSize: 25.0, fontFamily: "Segoe UI"),
-      validator: (value) => value?.isEmpty ?? true ? "Please enter your $label" : null,
+      validator: (value) => value?.isEmpty ?? true ? l10n.enterField(label) : null,
     );
   }
-
   Widget _buildActionButton(String text, Color color, VoidCallback onPressed, String tooltip) {
     return Padding(
       padding: EdgeInsets.only(top: 10.0, bottom: 10.0),

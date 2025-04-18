@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'locale_notifier.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -32,11 +35,9 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       String username = '';
 
-      // First try auth displayName
       if (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty) {
         username = _currentUser!.displayName!;
       } else {
-        // Fall back to Firestore
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(_currentUser!.uid)
@@ -44,7 +45,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
         if (userDoc.exists) {
           username = userDoc['username'] ?? '';
-          // Update auth displayName for consistency
           await _currentUser!.updateDisplayName(username);
         }
       }
@@ -62,10 +62,10 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _updateProfile() async {
+  Future<void> _updateProfile(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_formKey.currentState!.validate()) {
       try {
-        // Update both Auth and Firestore
         await _currentUser?.updateDisplayName(_nameController.text);
         await FirebaseFirestore.instance
             .collection('users')
@@ -74,8 +74,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Profile updated successfully!'),
+            content: Text(l10n.profileUpdatedSuccessfully),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         if (mounted) {
@@ -84,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error updating profile: $e'),
+            content: Text('${l10n.profileUpdateError} $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -92,7 +93,8 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _signOut() async {
+  void _signOut(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await _auth.signOut();
       if (mounted) {
@@ -101,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error signing out: $e'),
+          content: Text('${l10n.signOutError} $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -116,10 +118,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeNotifier = Provider.of<LocaleNotifier>(context, listen: false);
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Profile'),
+          title: Text(l10n.profile),
           backgroundColor: Colors.green,
           iconTheme: IconThemeData(color: Colors.white),
         ),
@@ -129,14 +134,37 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile', style: TextStyle(color: Colors.white)),
+        title: Text(l10n.editProfile, style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
         iconTheme: IconThemeData(color: Colors.white),
+
         actions: [
+          PopupMenuButton<Locale>(
+            icon: Icon(Icons.language, color: Colors.white),
+            onSelected: (Locale locale) {
+              localeNotifier.setLocale(locale);
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  value: Locale('en'),
+                  child: Text("English"),
+                ),
+                PopupMenuItem(
+                  value: Locale('fr'),
+                  child: Text("Français"),
+                ),
+                PopupMenuItem(
+                  value: Locale('ar'),
+                  child: Text("العربية"),
+                ),
+              ];
+            },
+          ),
           IconButton(
             icon: Icon(Icons.save, color: Colors.white),
-            onPressed: _updateProfile,
-            tooltip: "Save",
+            onPressed: () => _updateProfile(context),
+            tooltip: l10n.save,
           ),
         ],
       ),
@@ -152,7 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Text(
                   _nameController.text.isNotEmpty
                       ? _nameController.text[0].toUpperCase()
-                      : 'U',
+                      : "U",
                   style: TextStyle(fontSize: 48, color: Colors.green[800]),
                 ),
               ),
@@ -160,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Display Name',
+                  labelText: l10n.displayName,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -169,7 +197,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(fontSize: 16),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return l10n.enterName;
                   }
                   return null;
                 },
@@ -178,11 +206,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-
-                ),
                 child: Text(
-                  'Your E-mail:          ${_currentUser?.email ?? 'Not available'}',
+                  '${l10n.yourEmail}: ${_currentUser?.email ?? l10n.notAvailable}',
                   style: TextStyle(fontSize: 16),
                 ),
               ),
@@ -191,7 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 width: 150,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _signOut,
+                  onPressed: () => _signOut(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[400],
                     shape: RoundedRectangleBorder(
@@ -199,11 +224,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   child: Text(
-                    'Log Out',
+                    l10n.logOut,
                     style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),

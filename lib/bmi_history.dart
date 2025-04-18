@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'bmi_calculator.dart';
+import 'locale_notifier.dart';
 
 class BMIHistoryScreen extends StatelessWidget {
   Color _getCardColor(double bmi) {
@@ -21,23 +25,49 @@ class BMIHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final l10n = AppLocalizations.of(context)!;
+    final localeNotifier = Provider.of<LocaleNotifier>(context, listen: false);
 
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('History'),
+          title: Text(l10n.historyTitle),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            PopupMenuButton<Locale>(
+              icon: const Icon(Icons.language),
+              onSelected: (Locale locale) {
+                localeNotifier.setLocale(locale);
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    value: Locale('en'),
+                    child: Text('English'),
+                  ),
+                  const PopupMenuItem(
+                    value: Locale('fr'),
+                    child: Text('Français'),
+                  ),
+                  const PopupMenuItem(
+                    value: Locale('ar'),
+                    child: Text('العربية'),
+                  ),
+                ];
+              },
+            ),
+          ],
         ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Please sign in to view history'),
+              Text(l10n.signInToViewHistory),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => context.go('/login'),
-                child: const Text('Sign In'),
+                child: Text(l10n.signIn),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                 ),
@@ -50,16 +80,34 @@ class BMIHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BMI History', style: TextStyle(
+        title: Text(l10n.bmiHistoryTitle, style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
-        ),),
+        )),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => context.go('/'),
+          PopupMenuButton<Locale>(
+            icon: Icon(Icons.language, color: Colors.white),
+            onSelected: (Locale locale) {
+              localeNotifier.setLocale(locale);
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  value: Locale('en'),
+                  child: Text("English"),
+                ),
+                PopupMenuItem(
+                  value: Locale('fr'),
+                  child: Text("Français"),
+                ),
+                PopupMenuItem(
+                  value: Locale('ar'),
+                  child: Text("العربية"),
+                ),
+              ];
+            },
           ),
         ],
       ),
@@ -71,11 +119,11 @@ class BMIHistoryScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return const Center(child: Text('Error loading data'));
+            return Center(child: Text(l10n.errorLoadingData));
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -85,11 +133,11 @@ class BMIHistoryScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.history, size: 50, color: Colors.grey),
                   const SizedBox(height: 20),
-                  const Text('No BMI records found'),
+                  Text(l10n.noRecordsFound, style: TextStyle(color: Colors.white)),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () => context.go('/'),
-                    child: const Text('Calculate BMI'),
+                    child: Text(l10n.calculateBmi),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                     ),
@@ -107,62 +155,62 @@ class BMIHistoryScreen extends StatelessWidget {
               final data = doc.data() as Map<String, dynamic>;
               final timestamp = (data['timestamp'] as Timestamp).toDate();
               final bmi = (data['bmi'] as num).toDouble();
-              final result = data['result'] as String;
-              final weight = data['weight']?.toStringAsFixed(1) ?? 'N/A';
-              final height = data['height']?.toStringAsFixed(1) ?? 'N/A';
+              final resultKey = data['resultKey'] as String?;
+              if (resultKey == null) return Container();
+              final result = BMICalculator.getBMIResult(context, bmi, resultKey);
+              final weight = data['weight']?.toStringAsFixed(1) ?? l10n.notAvailable;
+              final height = data['height']?.toStringAsFixed(1) ?? l10n.notAvailable;
 
               return Card(
                 elevation: 2,
                 color: _getCardColor(bmi),
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Padding(
-                  padding: const
-                  //EdgeInsets.all(12),
-                  EdgeInsets.only(top: 1, bottom: 1, left: 12),
+                  padding: const EdgeInsets.only(top: 1, bottom: 1, left: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${l10n.bmiLabel}: ${bmi.toStringAsFixed(1)}',
+                            style: TextStyle(
+                              color: _getTextColor(bmi),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _showDeleteDialog(context, doc.id),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 1),
                       Text(
-                        'BMI: ${bmi.toStringAsFixed(1)}',
+                        '${l10n.categoryLabel}: ${result.split('(')[0].trim()}',
                         style: TextStyle(
                           color: _getTextColor(bmi),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _showDeleteDialog(context, doc.id),
+                      const SizedBox(height: 1),
+                      Text(
+                        '${l10n.categoryLabel}: ${result.split('(')[0].trim()}',
+                        style: TextStyle(
+                          color: _getTextColor(bmi),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        DateFormat('MMM dd, yyyy - hh:mm a').format(timestamp),
+                        style: TextStyle(
+                          color: _getTextColor(bmi),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    'Weight: $weight kg | Height: $height cm',
-                    style: TextStyle(
-                      color: _getTextColor(bmi),
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    'Category: ${result.split('(')[0].trim()}',
-                    style: TextStyle(
-                      color: _getTextColor(bmi),
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    DateFormat('MMM dd, yyyy - hh:mm a').format(timestamp),
-                    style: TextStyle(
-                      color: _getTextColor(bmi),
-                    ),
-                  ),
-                    ],
-
                   ),
                 ),
               );
@@ -174,19 +222,20 @@ class BMIHistoryScreen extends StatelessWidget {
   }
 
   Future<void> _showDeleteDialog(BuildContext context, String docId) async {
+    final l10n = AppLocalizations.of(context)!;
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Record'),
-          content: const Text('Are you sure you want to delete this BMI record?'),
+          title: Text(l10n.deleteRecordTitle),
+          content: Text(l10n.deleteRecordConfirmation),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text(l10n.delete, style: TextStyle(color: Colors.red)),
               onPressed: () {
                 _deleteRecord(docId);
                 Navigator.of(context).pop();
