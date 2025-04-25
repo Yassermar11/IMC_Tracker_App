@@ -81,4 +81,9 @@ Would you prefer to reuse the values in your existing firebase.json file to conf
 - Start the project with the command:
 flutter run -d edge (It's recommended to run the project on the edge or chrome, to avoid the problems with the android)
 
+Diagramme de séquence : 
+![diagramme de séquence BMI app Yasser Marzouhi](https://github.com/user-attachments/assets/4a3c2022-a171-4e88-be49-34616bcd9e92)
+
 📌 made by @Yassermar11
+
+
