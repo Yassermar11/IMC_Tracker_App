@@ -134,4 +134,4 @@ flutter run -d edge
 <a href="https://github.com/Yassermar11"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" width="30" height="30" alt="GitHub"></a>
 <a href="https://www.instagram.com/its_yasser_33/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Instagram_logo_2022.svg/1200px-Instagram_logo_2022.svg.png" width="30" height="30" alt="Instagram"></a>
 
-📌 made by Yasser
+## 📌 Made by Yasser Marzouhi
