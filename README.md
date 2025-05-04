@@ -1,44 +1,70 @@
- - BMI Calculation
- - Authentication
- - Data Storage
- - History Tracking
- - Multilingual Support
-    - English/French/Arabic languages
+## ✨ Features
+
+- 🧮 **BMI Calculation**  
+  Calculate and display the Body Mass Index (BMI) based on user input.  
+  A visual **gauge** appears after clicking the **Calculate** button, showing the BMI value and indicating its category (e.g., Underweight, Normal, Overweight...) with color-coded segments.
+
+- 🔐 **Authentication**  
+  Secure user login and registration functionality, including:
+  - 🔑 Login with email and password  
+  - ❓ "Forgot Password" recovery option
+
+- 💾 **Data Storage**  
+  Store user data safely using **Firestore Database**
+
+- 📊 **History Tracking**  
+  Keep track of previous BMI entries and changes over time.  
+  Each user's history is securely stored and **isolated from other users**, ensuring privacy and personalized data access.
+
+- 🌍 **Multilingual Support**  
+  Supports multiple languages:
+  - English  
+  - French  
+  - Arabic
+
+- 👤 **Profile Page**  
+  A dedicated page where users can:
+  - ✏️ Change their **username**
+  - 📧 View the **email address** they registered with
+  - 🚪 **Log out** securely from their account
 
 1) Clone the project
+```bash
 git clone https://github.com/Yassermar11/imc_with_backend_v2
+```
 
-2) Update Flutter dependencies
+3) Update Flutter dependencies
 
 Run the following command to ensure all dependencies are up to date:
-$ flutter pub get
-
-If you see the message "All dependencies are up-to-date.", you're good to go.
+```bash
+flutter pub get
+```
 
 3) Create a Firebase project
- - Sign in to Firebase Console: Firebase Console
- - Click Create a project.
- - In the Project name field, enter "IMC", then click Continue.
- - Disable the Google Analytics option.
- - Click through the project creation options. Accept the Firebase terms if prompted.
+ - Sign in to [Firebase Console](https://console.firebase.google.com/u/0/)
+ - Click ```Create a project```
+ - In the Project name field, enter ```IMC```, then click Continue
+ - Disable ```the Google Analytics``` option
+ - Click through the project creation options, accept the Firebase terms if prompted.
 
 4) Enable email sign-in authentication
- - In the Firebase Console, open your project and expand the Build (Créer) menu.
- - Click Authentication > Get Started > Sign-in method > Email/Password.
- - Enable it and click Save.
+ - In the [Firebase Console](https://console.firebase.google.com/u/0/), open your project and expand the ```Build``` menu.
+ - Click ```Authentication > Get Started > Sign-in method > Email/Password```
+ - ```Enable``` it and click ```Save```
 
-See example here : https://firebase.google.com/static/codelabs/firebase-get-to-know-flutter/img/58e3e3e23c2f16a4_856.png
+![58e3e3e23c2f16a4_856](https://github.com/user-attachments/assets/3acfc8f4-c92f-4fa6-b7c6-c1f2dbeb4d85)
 
 5) Set up Firestore
- - In the left panel of the Firebase Console, expand Build (Créer) and select Firestore Database.
- - Click Create database.
- - Keep the Database ID as (default).
- - Select a location for your database (Europe is recommended), then click Next.
- - Click Start in test mode and read the security rules disclaimer.
- - Click Create.
 
- - Go to the Rules (Règles) tab and replace the content with:
+ - In the left panel of the [Firebase Console](https://console.firebase.google.com/u/0/), expand ```Build``` and select ```Firestore Database```
+ - Click ```Create database```
+ - Keep the Database ID as ```default```
+ - Select a location for your database ```(Europe or USA is recommended)```, then click ```Next```
+ - Click ```Start``` in test mode and read the security rules disclaimer.
+ - Click ```Create```
 
+ - Go to ```the Rules``` tab and replace the content with:
+```bash
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -54,36 +80,55 @@ service cloud.firestore {
     }
   }
 }
+```
+ - Click ```Publish```
+6) Configuration of index
+ - In the [Firebase Console](https://console.firebase.google.com/u/0/), open your project and then Firestore Database.
+ - Click ```Index > Add Index```
 
- - Click Publish (Partager).
-6) Configuration de l'index
- - In the Firebase Console, open your project and then Firestore Database.
- - Click Index > Add Index (or "Ajouter un index")
- - Screenshot explain everything https://drive.google.com/file/d/15RuAYuHvQ2-L0qvUgw5-wqwZiRf52X9J/view?usp=sharing
+![efzefzefzef](https://github.com/user-attachments/assets/57e40be7-08d5-44d5-a12d-f6f3c7cfe342)
 
 7) Configure Firebase in the Flutter project
 
 Ensure you are logged in with the correct Google account by running:
-$ firebase login
-
+```bash
+firebase login
+```
 Run the following command to configure Firebase in your Flutter project:
-$ flutterfire configure
+```bash 
+flutterfire configure
+```
 
 If you see the following message, type "no":
 
-"You have an existing firebase.json file and possibly already configured your project for Firebase.
-Would you prefer to reuse the values in your existing firebase.json file to configure your project? · no"
+```You have an existing firebase.json file and possibly already configured your project for Firebase. Would you prefer to reuse the values in your existing firebase.json file to configure your project?```
 
-8) Run the project
-- Befor you run the project, use this command to generate localization files. This command reads the intl configuration from the l10n.yaml file and generates the Dart localization files.
-- $ flutter gen-l10n
+8) Generate localization files
 
-- Start the project with the command:
-flutter run -d edge (It's recommended to run the project on the edge or chrome, to avoid the problems with the android)
+Use this command to generate localization files. 
+This command reads the ```intl configuration``` from the ```l10n.yaml``` file and generates the Dart localization files.
+```bash
+flutter gen-l10n
+```
+
+10) Run the project
+
+Start the project with this command
+```bash
+flutter run -d edge
+```
+```It's recommended to run the project on the edge or chrome, to avoid the problems with the android```
 
 Diagramme de séquence : 
-![diagramme de séquence BMI app Yasser Marzouhi](https://github.com/user-attachments/assets/4a3c2022-a171-4e88-be49-34616bcd9e92)
+![diagramme de séquence BMI app Yasser Marzouhi![efzefzefzef](https://github.com/user-attachments/assets/f6579e0f-a9f0-4c0d-8bf5-833f27062d7c)
+](https://github.com/user-attachments/assets/4a3c2022-a171-4e88-be49-34616bcd9e92)
 
-📌 made by @Yassermar11
+📌 made by Yasser
+
+## Follow Me
+
+<a href="https://linkedin.com/in/yasser-marzouhi-590a23260"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/960px-LinkedIn_logo_initials.png" width="30" height="30" alt="LinkedIn"></a>
+<a href="https://github.com/Yassermar11"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" width="30" height="30" alt="GitHub"></a>
+<a href="https://www.instagram.com/its_yasser_33/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Instagram_logo_2022.svg/1200px-Instagram_logo_2022.svg.png" width="30" height="30" alt="Instagram"></a>
 
 
