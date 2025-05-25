@@ -33,7 +33,7 @@
 
 1) Clone the project
 ```bash
-git clone https://github.com/Yassermar11/imc_with_backend_v2
+git clone https://github.com/Yassermar11/IMC_Tracker_App
 ```
 Open the project in your IDE (e.g., Android Studio or VS Code).
 
